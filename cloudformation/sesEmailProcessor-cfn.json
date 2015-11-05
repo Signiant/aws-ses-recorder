@@ -1,0 +1,105 @@
+{
+  "AWSTemplateFormatVersion" : "2010-09-09",
+  "Resources" : {
+    "bouncesDynamoDBTable" : {
+      "Type" : "AWS::DynamoDB::Table",
+      "Properties" : {
+        "AttributeDefinitions" : [
+          {
+            "AttributeName" : "sesMessageId",
+            "AttributeType" : "S"   
+          },
+          {
+            "AttributeName" : "recipientAddress",
+            "AttributeType" : "S"
+          },
+          {
+            "AttributeName" : "sesTimestamp",
+            "AttributeType" : "N"
+          }
+        ],
+        "KeySchema" : [
+          {
+            "AttributeName" : "recipientAddress",
+            "KeyType" : "HASH"
+          },
+          {
+            "AttributeName" : "sesMessageId",
+            "KeyType" : "RANGE"
+          }
+        ],
+        "ProvisionedThroughput" : {
+          "ReadCapacityUnits" : "5",
+          "WriteCapacityUnits" : "5"
+        },
+        "TableName" : "SES_BOUNCES",
+        "GlobalSecondaryIndexes" : [{
+          "IndexName" : "sesTimestamp-index",
+          "KeySchema" : [
+            {
+              "AttributeName" : "sesTimestamp",
+              "KeyType" : "HASH"
+            }
+          ],                         
+          "Projection" : {
+            "ProjectionType" : "ALL"
+          },
+          "ProvisionedThroughput" : {
+            "ReadCapacityUnits" : "5",
+            "WriteCapacityUnits" : "5"
+          }
+        }]
+      }
+    },
+	  "deliveriesDynamoDBTable" : {
+      "Type" : "AWS::DynamoDB::Table",
+      "Properties" : {
+        "AttributeDefinitions" : [
+          {
+            "AttributeName" : "sesMessageId",
+            "AttributeType" : "S"   
+          },
+          {
+            "AttributeName" : "recipientAddress",
+            "AttributeType" : "S"
+          },
+          {
+            "AttributeName" : "sesTimestamp",
+            "AttributeType" : "N"
+          }
+        ],
+        "KeySchema" : [
+          {
+            "AttributeName" : "recipientAddress",
+            "KeyType" : "HASH"
+          },
+          {
+            "AttributeName" : "sesMessageId",
+            "KeyType" : "RANGE"
+          }
+        ],
+        "ProvisionedThroughput" : {
+          "ReadCapacityUnits" : "5",
+          "WriteCapacityUnits" : "5"
+        },
+        "TableName" : "SES_DELIVERIES",
+        "GlobalSecondaryIndexes" : [{
+          "IndexName" : "sesTimestamp-index",
+          "KeySchema" : [
+            {
+              "AttributeName" : "sesTimestamp",
+              "KeyType" : "HASH"
+            }
+          ],                         
+          "Projection" : {
+            "ProjectionType" : "ALL"
+          },
+          "ProvisionedThroughput" : {
+            "ReadCapacityUnits" : "5",
+            "WriteCapacityUnits" : "5"
+          }
+        }]
+      }
+    }
+  }
+}
