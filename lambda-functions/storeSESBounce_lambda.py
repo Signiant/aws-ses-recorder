@@ -17,7 +17,7 @@ def lambda_handler(event, context):
     #print("Received event: " + json.dumps(event, indent=2))
     
     processed = False
-    DYNAMODB_TABLE = "SES_BOUNCES"
+    DYNAMODB_TABLE = "DEVOPS_SES_BOUNCES"
     
     DDBtable = boto3.resource('dynamodb').Table(DYNAMODB_TABLE)
     
@@ -36,7 +36,7 @@ def lambda_handler(event, context):
     SESjson = json.loads(SnsMessage)
     sesNotificationType = SESjson['notificationType']
     sesMessageId = SESjson['mail']['messageId']
-    sesTimestamp = SESjson['mail']['timestamp']
+    sesTimestamp = SESjson['mail']['timestamp'] #the time the original message was sent
     sender = SESjson['mail']['source']
     
     print("Processing an SES " + sesNotificationType + " with mID " + sesMessageId )
@@ -55,6 +55,7 @@ def lambda_handler(event, context):
         bounceRecipients = SESjson['bounce']['bouncedRecipients']
         bounceType = SESjson['bounce']['bounceType']
         bounceSubType = SESjson['bounce']['bounceSubType']
+        bounceTimestamp = SESjson['bounce']['timestamp'] # the time at which the bounce was sent by the ISP
         
         # There can be a seperate bounce reason per recipient IF it's not a suppression bounce
         for recipient in bounceRecipients:
@@ -71,12 +72,16 @@ def lambda_handler(event, context):
             
             sesTimestamp_parsed = dateutil.parser.parse(sesTimestamp)
             sesTimestamp_seconds = sesTimestamp_parsed.strftime('%s')
+
+            bounceTimestamp_parsed = dateutil.parser.parse(bounceTimestamp)
+            bounceTimestamp_seconds = bounceTimestamp_parsed.strftime('%s')
             
             # Add entry to DB for this recipient
             Item={
                 'recipientAddress': recipientEmailAddress,
                 'sesMessageId': sesMessageId,
                 'sesTimestamp': long(sesTimestamp_seconds),
+                'bounceTimestamp': long(bounceTimestamp_seconds),
                 'reportingMTA': reportingMTA,
                 'diagnosticCode': diagnosticCode,
                 'bounceType': bounceType,
@@ -88,7 +93,8 @@ def lambda_handler(event, context):
             print("PutItem succeeded:")
             print(json.dumps(response, indent=4, cls=DecimalEncoder))
             
-            processed = True      
+            processed = True
+        
     else:
         print("Unhandled notification type: " +  sesNotificationType)       
     
