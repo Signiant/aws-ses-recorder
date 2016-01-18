@@ -17,7 +17,7 @@ def lambda_handler(event, context):
     #print("Received event: " + json.dumps(event, indent=2))
     
     processed = False
-    DYNAMODB_TABLE = "SES_DELIVERIES"
+    DYNAMODB_TABLE = "DEVOPS_SES_DELIVERIES"
     
     DDBtable = boto3.resource('dynamodb').Table(DYNAMODB_TABLE)
     
@@ -47,6 +47,8 @@ def lambda_handler(event, context):
         reportingMTA = SESjson['delivery']['reportingMTA']
         deliveryRecipients = SESjson['delivery']['recipients']
         smtpResponse = SESjson['delivery']['smtpResponse']
+        deliveryTimestamp = SESjson['delivery']['timestamp']
+        processingTime = SESjson['delivery']['processingTimeMillis']
         
         # there can be multiple recipients but the SMTPresponse is the same for each
         for recipient in deliveryRecipients:
@@ -57,11 +59,16 @@ def lambda_handler(event, context):
             sesTimestamp_parsed = dateutil.parser.parse(sesTimestamp)
             sesTimestamp_seconds = sesTimestamp_parsed.strftime('%s')
             
+            deliveryTimestamp_parsed = dateutil.parser.parse(deliveryTimestamp)
+            deliveryTimestamp_seconds = deliveryTimestamp_parsed.strftime('%s')
+            
             # Add entry to DB for this recipient
             Item={
                 'recipientAddress': recipientEmailAddress,
                 'sesMessageId': sesMessageId,
                 'sesTimestamp': long(sesTimestamp_seconds),
+                'deliveryTimestamp': long(deliveryTimestamp_seconds),
+                'processingTime': long(processingTime),
                 'reportingMTA': reportingMTA,
                 'smtpResponse': smtpResponse,
                 'sender': sender.lower()
@@ -71,7 +78,8 @@ def lambda_handler(event, context):
             print("PutItem succeeded:")
             print(json.dumps(response, indent=4, cls=DecimalEncoder))
             
-            processed = True       
+            processed = True
+        
     else:
         print("Unhandled notification type: " +  sesNotificationType)       
     
