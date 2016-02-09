@@ -7,7 +7,7 @@
         "AttributeDefinitions" : [
           {
             "AttributeName" : "sesMessageId",
-            "AttributeType" : "S"   
+            "AttributeType" : "S"
           },
           {
             "AttributeName" : "recipientAddress",
@@ -32,7 +32,7 @@
           "ReadCapacityUnits" : "5",
           "WriteCapacityUnits" : "5"
         },
-        "TableName" : "SES_BOUNCES",
+        "TableName" : "DEVOPS_SES_BOUNCES",
         "GlobalSecondaryIndexes" : [{
           "IndexName" : "sesTimestamp-index",
           "KeySchema" : [
@@ -40,7 +40,7 @@
               "AttributeName" : "sesTimestamp",
               "KeyType" : "HASH"
             }
-          ],                         
+          ],
           "Projection" : {
             "ProjectionType" : "ALL"
           },
@@ -57,7 +57,7 @@
         "AttributeDefinitions" : [
           {
             "AttributeName" : "sesMessageId",
-            "AttributeType" : "S"   
+            "AttributeType" : "S"
           },
           {
             "AttributeName" : "recipientAddress",
@@ -82,7 +82,7 @@
           "ReadCapacityUnits" : "5",
           "WriteCapacityUnits" : "5"
         },
-        "TableName" : "SES_DELIVERIES",
+        "TableName" : "DEVOPS_SES_DELIVERIES",
         "GlobalSecondaryIndexes" : [{
           "IndexName" : "sesTimestamp-index",
           "KeySchema" : [
@@ -90,7 +90,7 @@
               "AttributeName" : "sesTimestamp",
               "KeyType" : "HASH"
             }
-          ],                         
+          ],
           "Projection" : {
             "ProjectionType" : "ALL"
           },
@@ -99,6 +99,20 @@
             "WriteCapacityUnits" : "5"
           }
         }]
+      }
+    },
+    "bouncesSNSTopic": {
+      "Type" : "AWS::SNS::Topic",
+      "Properties" : {
+        "DisplayName" : "SESBounce",
+        "TopicName" : "SES_Email_Bounce_Notifications"
+      }
+    },
+    "deliveriesSNSTopic": {
+      "Type" : "AWS::SNS::Topic",
+      "Properties" : {
+        "DisplayName" : "SESDeliv",
+        "TopicName" : "SES_Email_Delivery_Notifications"
       }
     }
   }
