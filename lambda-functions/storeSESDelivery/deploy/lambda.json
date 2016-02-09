@@ -1,0 +1,17 @@
+{
+  "name": "storeSESdelivery",
+  "archive": "lambda.zip",
+  "description": "Writes an SES delivery to dynamoDB",
+  "region": "##application.aws.lambda.region##",
+  "runtime": "python2.7",
+  "memorySize": 128,
+  "timeout": 10,
+  "handler": "storeSESDelivery_lambda.lambda_handler",
+  "events": [
+    {
+      "type": "sns",
+      "src": "",
+      "parameter": "##application.aws.lambda.event.sns.topic##"
+    }
+  ]
+}

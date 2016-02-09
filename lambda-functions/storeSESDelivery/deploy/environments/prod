@@ -1,0 +1,4 @@
+application.aws.lambda.region=us-east-1
+
+
+application.aws.lambda.event.sns.topic=SES_Email_Delivery_Notifications
