@@ -59,7 +59,12 @@ def lambda_handler(event, context):
         
         # There can be a seperate bounce reason per recipient IF it's not a suppression bounce
         for recipient in bounceRecipients:
-            recipientEmailAddress = recipient['emailAddress']
+            try:
+                recipientEmailAddress = recipient['emailAddress']
+            except:
+                print "No recipient email provided in bounce notification"
+                print("Received event: " + json.dumps(event, indent=2))
+                recipientEmailAddress = "UNKNOWN"
             
             try:
                 diagnosticCode = recipient['diagnosticCode']
@@ -68,7 +73,7 @@ def lambda_handler(event, context):
                 print("Received event: " + json.dumps(event, indent=2))
                 diagnosticCode = "UNKNOWN"
             
-            print("Bounced recipient: " + recipientEmailAddress + " reason: " + diagnosticCode)
+            print("Bounced recipient: " + str(recipientEmailAddress) + " reason: " + str(diagnosticCode))
             
             sesTimestamp_parsed = dateutil.parser.parse(sesTimestamp)
             sesTimestamp_seconds = sesTimestamp_parsed.strftime('%s')
