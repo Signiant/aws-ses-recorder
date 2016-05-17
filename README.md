@@ -1,5 +1,7 @@
 # aws-ses-recorder
-These lambda functions processes SES email deliveries and bounces and writes them to dynamoDB tables.  To install and use these:
+These lambda functions processes SES email deliveries and bounces and writes them to dynamoDB tables.  There is also a [complementary GUI query tool](https://github.com/Signiant/aws-ses-recorder-query-tool) available .
+
+To install and use these:
 
 1) Create a CloudFormation stack using the template here.  This will create the required dynamoDB tables and SNS topics
 
