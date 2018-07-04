@@ -93,7 +93,7 @@ def lambda_handler(event, context):
         else:
             print("Unhandled notification type: " +  sesNotificationType)
     else:
-        print(Incoming event is not a mail event")
+        print("Incoming event is not a mail event")
         print("Received event was: " + json.dumps(event, indent=2))
         processed = True
 
