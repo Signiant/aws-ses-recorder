@@ -37,58 +37,64 @@ def lambda_handler(event, context):
     # SES specific fields
     SESjson = json.loads(SnsMessage)
     sesNotificationType = SESjson['notificationType']
-    sesMessageId = SESjson['mail']['messageId']
-    sesTimestamp = SESjson['mail']['timestamp']
-    sender = SESjson['mail']['source']
 
-    print("Processing an SES " + sesNotificationType + " with mID " + sesMessageId )
+    if 'mail' in SESjson:
+        sesMessageId = SESjson['mail']['messageId']
+        sesTimestamp = SESjson['mail']['timestamp']
+        sender = SESjson['mail']['source']
 
-    if (sesNotificationType == "Delivery"):
-        print "Processing SES delivery messsage"
+        print("Processing an SES " + sesNotificationType + " with mID " + sesMessageId )
 
-        reportingMTA = SESjson['delivery']['reportingMTA']
-        deliveryRecipients = SESjson['delivery']['recipients']
-        smtpResponse = SESjson['delivery']['smtpResponse']
-        deliveryTimestamp = SESjson['delivery']['timestamp']
-        processingTime = SESjson['delivery']['processingTimeMillis']
+        if (sesNotificationType == "Delivery"):
+            print "Processing SES delivery messsage"
 
-        # there can be multiple recipients but the SMTPresponse is the same for each
-        for recipient in deliveryRecipients:
-            recipientEmailAddress = recipient
+            reportingMTA = SESjson['delivery']['reportingMTA']
+            deliveryRecipients = SESjson['delivery']['recipients']
+            smtpResponse = SESjson['delivery']['smtpResponse']
+            deliveryTimestamp = SESjson['delivery']['timestamp']
+            processingTime = SESjson['delivery']['processingTimeMillis']
 
-            print("Delivery recipient: " + recipientEmailAddress )
+            # there can be multiple recipients but the SMTPresponse is the same for each
+            for recipient in deliveryRecipients:
+                recipientEmailAddress = recipient
 
-            sesTimestamp_parsed = dateutil.parser.parse(sesTimestamp)
-            sesTimestamp_seconds = sesTimestamp_parsed.strftime('%s')
+                print("Delivery recipient: " + recipientEmailAddress )
 
-            deliveryTimestamp_parsed = dateutil.parser.parse(deliveryTimestamp)
-            deliveryTimestamp_seconds = deliveryTimestamp_parsed.strftime('%s')
+                sesTimestamp_parsed = dateutil.parser.parse(sesTimestamp)
+                sesTimestamp_seconds = sesTimestamp_parsed.strftime('%s')
 
-            # Set an expiry time for this record so we can use Dynamo TTLs to remove
-            # 4 months but easy to change
-            future = datetime.datetime.utcnow() + datetime.timedelta(days=120)
-            expiry_ttl = calendar.timegm(future.timetuple())
+                deliveryTimestamp_parsed = dateutil.parser.parse(deliveryTimestamp)
+                deliveryTimestamp_seconds = deliveryTimestamp_parsed.strftime('%s')
 
-            # Add entry to DB for this recipient
-            Item={
-                'recipientAddress': recipientEmailAddress,
-                'sesMessageId': sesMessageId,
-                'sesTimestamp': long(sesTimestamp_seconds),
-                'deliveryTimestamp': long(deliveryTimestamp_seconds),
-                'processingTime': long(processingTime),
-                'reportingMTA': reportingMTA,
-                'smtpResponse': smtpResponse,
-                'sender': sender.lower(),
-                'expiry': long(expiry_ttl)
-            }
+                # Set an expiry time for this record so we can use Dynamo TTLs to remove
+                # 4 months but easy to change
+                future = datetime.datetime.utcnow() + datetime.timedelta(days=120)
+                expiry_ttl = calendar.timegm(future.timetuple())
 
-            response = DDBtable.put_item(Item=Item)
-            print("PutItem succeeded:")
-            print(json.dumps(response, indent=4, cls=DecimalEncoder))
+                # Add entry to DB for this recipient
+                Item={
+                    'recipientAddress': recipientEmailAddress,
+                    'sesMessageId': sesMessageId,
+                    'sesTimestamp': long(sesTimestamp_seconds),
+                    'deliveryTimestamp': long(deliveryTimestamp_seconds),
+                    'processingTime': long(processingTime),
+                    'reportingMTA': reportingMTA,
+                    'smtpResponse': smtpResponse,
+                    'sender': sender.lower(),
+                    'expiry': long(expiry_ttl)
+                }
 
-            processed = True
+                response = DDBtable.put_item(Item=Item)
+                print("PutItem succeeded:")
+                print(json.dumps(response, indent=4, cls=DecimalEncoder))
 
+                processed = True
+
+        else:
+            print("Unhandled notification type: " +  sesNotificationType)
     else:
-        print("Unhandled notification type: " +  sesNotificationType)
+        print(Incoming event is not a mail event")
+        print("Received event was: " + json.dumps(event, indent=2))
+        processed = True
 
     return processed

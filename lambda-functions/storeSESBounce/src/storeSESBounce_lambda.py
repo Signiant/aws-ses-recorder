@@ -37,77 +37,83 @@ def lambda_handler(event, context):
     # SES specific fields
     SESjson = json.loads(SnsMessage)
     sesNotificationType = SESjson['notificationType']
-    sesMessageId = SESjson['mail']['messageId']
-    sesTimestamp = SESjson['mail']['timestamp'] #the time the original message was sent
-    sender = SESjson['mail']['source']
 
-    print("Processing an SES " + sesNotificationType + " with mID " + sesMessageId )
+    if 'mail' in SESjson:
+        sesMessageId = SESjson['mail']['messageId']
+        sesTimestamp = SESjson['mail']['timestamp'] #the time the original message was sent
+        sender = SESjson['mail']['source']
 
-    if (sesNotificationType == "Bounce"):
-        print "Processing SES bounce messsage"
+        print("Processing an SES " + sesNotificationType + " with mID " + sesMessageId )
 
-        try:
-            reportingMTA = SESjson['bounce']['reportingMTA']
-        except:
-            print "No reportingMTA provided in bounce notification"
-            print("Received event: " + json.dumps(event, indent=2))
-            reportingMTA = "UNKNOWN"
-
-        bounceType = SESjson['bounce']['bounceType']
-        bounceRecipients = SESjson['bounce']['bouncedRecipients']
-        bounceType = SESjson['bounce']['bounceType']
-        bounceSubType = SESjson['bounce']['bounceSubType']
-        bounceTimestamp = SESjson['bounce']['timestamp'] # the time at which the bounce was sent by the ISP
-
-        # There can be a seperate bounce reason per recipient IF it's not a suppression bounce
-        for recipient in bounceRecipients:
-            try:
-                recipientEmailAddress = recipient['emailAddress']
-            except:
-                print "No recipient email provided in bounce notification"
-                print("Received event: " + json.dumps(event, indent=2))
-                recipientEmailAddress = "UNKNOWN"
+        if (sesNotificationType == "Bounce"):
+            print "Processing SES bounce messsage"
 
             try:
-                diagnosticCode = recipient['diagnosticCode']
+                reportingMTA = SESjson['bounce']['reportingMTA']
             except:
-                print "No diagnosticCode provided in bounce notification"
+                print "No reportingMTA provided in bounce notification"
                 print("Received event: " + json.dumps(event, indent=2))
-                diagnosticCode = "UNKNOWN"
+                reportingMTA = "UNKNOWN"
 
-            print("Bounced recipient: " + str(recipientEmailAddress) + " reason: " + str(diagnosticCode))
+            bounceType = SESjson['bounce']['bounceType']
+            bounceRecipients = SESjson['bounce']['bouncedRecipients']
+            bounceType = SESjson['bounce']['bounceType']
+            bounceSubType = SESjson['bounce']['bounceSubType']
+            bounceTimestamp = SESjson['bounce']['timestamp'] # the time at which the bounce was sent by the ISP
 
-            sesTimestamp_parsed = dateutil.parser.parse(sesTimestamp)
-            sesTimestamp_seconds = sesTimestamp_parsed.strftime('%s')
+            # There can be a seperate bounce reason per recipient IF it's not a suppression bounce
+            for recipient in bounceRecipients:
+                try:
+                    recipientEmailAddress = recipient['emailAddress']
+                except:
+                    print "No recipient email provided in bounce notification"
+                    print("Received event: " + json.dumps(event, indent=2))
+                    recipientEmailAddress = "UNKNOWN"
 
-            bounceTimestamp_parsed = dateutil.parser.parse(bounceTimestamp)
-            bounceTimestamp_seconds = bounceTimestamp_parsed.strftime('%s')
+                try:
+                    diagnosticCode = recipient['diagnosticCode']
+                except:
+                    print "No diagnosticCode provided in bounce notification"
+                    print("Received event: " + json.dumps(event, indent=2))
+                    diagnosticCode = "UNKNOWN"
 
-            # Set an expiry time for this record so we can use Dynamo TTLs to remove
-            future = datetime.datetime.utcnow() + datetime.timedelta(days=120)
-            expiry_ttl = calendar.timegm(future.timetuple())
+                print("Bounced recipient: " + str(recipientEmailAddress) + " reason: " + str(diagnosticCode))
 
-            # Add entry to DB for this recipient
-            Item={
-                'recipientAddress': recipientEmailAddress,
-                'sesMessageId': sesMessageId,
-                'sesTimestamp': long(sesTimestamp_seconds),
-                'bounceTimestamp': long(bounceTimestamp_seconds),
-                'reportingMTA': reportingMTA,
-                'diagnosticCode': diagnosticCode,
-                'bounceType': bounceType,
-                'bounceSubType': bounceSubType,
-                'sender': sender.lower(),
-                'expiry': long(expiry_ttl)
-            }
+                sesTimestamp_parsed = dateutil.parser.parse(sesTimestamp)
+                sesTimestamp_seconds = sesTimestamp_parsed.strftime('%s')
 
-            response = DDBtable.put_item(Item=Item)
-            print("PutItem succeeded:")
-            print(json.dumps(response, indent=4, cls=DecimalEncoder))
+                bounceTimestamp_parsed = dateutil.parser.parse(bounceTimestamp)
+                bounceTimestamp_seconds = bounceTimestamp_parsed.strftime('%s')
 
-            processed = True
+                # Set an expiry time for this record so we can use Dynamo TTLs to remove
+                future = datetime.datetime.utcnow() + datetime.timedelta(days=120)
+                expiry_ttl = calendar.timegm(future.timetuple())
 
+                # Add entry to DB for this recipient
+                Item={
+                    'recipientAddress': recipientEmailAddress,
+                    'sesMessageId': sesMessageId,
+                    'sesTimestamp': long(sesTimestamp_seconds),
+                    'bounceTimestamp': long(bounceTimestamp_seconds),
+                    'reportingMTA': reportingMTA,
+                    'diagnosticCode': diagnosticCode,
+                    'bounceType': bounceType,
+                    'bounceSubType': bounceSubType,
+                    'sender': sender.lower(),
+                    'expiry': long(expiry_ttl)
+                }
+
+                response = DDBtable.put_item(Item=Item)
+                print("PutItem succeeded:")
+                print(json.dumps(response, indent=4, cls=DecimalEncoder))
+
+                processed = True
+
+        else:
+            print("Unhandled notification type: " +  sesNotificationType)
     else:
-        print("Unhandled notification type: " +  sesNotificationType)
+        print(Incoming event is not a mail event")
+        print("Received event was: " + json.dumps(event, indent=2))
+        processed = True
 
     return processed
