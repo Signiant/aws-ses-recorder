@@ -3,7 +3,7 @@
   "archive": "lambda.zip",
   "description": "Writes an SES bounce to dynamoDB",
   "region": "##application.aws.lambda.region##",
-  "runtime": "python2.7",
+  "runtime": "python3.8",
   "memorySize": 128,
   "timeout": 180,
   "handler": "storeSESBounce_lambda.lambda_handler",
