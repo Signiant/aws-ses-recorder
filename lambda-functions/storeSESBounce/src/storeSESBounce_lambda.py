@@ -5,6 +5,7 @@ import dateutil.parser
 import datetime
 import calendar
 
+
 # Helper class to convert a DynamoDB item to JSON.
 class DecimalEncoder(json.JSONEncoder):
     def default(self, o):
@@ -14,6 +15,7 @@ class DecimalEncoder(json.JSONEncoder):
             else:
                 return int(o)
         return super(DecimalEncoder, self).default(o)
+
 
 def lambda_handler(event, context):
     #print("Received event: " + json.dumps(event, indent=2))
@@ -32,7 +34,7 @@ def lambda_handler(event, context):
     print("Read SNS Message with ID " + SnsMessageId + " published at " + SnsPublishTime)
 
     now = time.strftime("%c")
-    LambdaReceiveTime = now;
+    LambdaReceiveTime = now
 
     # SES specific fields
     SESjson = json.loads(SnsMessage)
@@ -43,15 +45,15 @@ def lambda_handler(event, context):
         sesTimestamp = SESjson['mail']['timestamp'] #the time the original message was sent
         sender = SESjson['mail']['source']
 
-        print("Processing an SES " + sesNotificationType + " with mID " + sesMessageId )
+        print("Processing an SES " + sesNotificationType + " with mID " + sesMessageId)
 
         if (sesNotificationType == "Bounce"):
-            print "Processing SES bounce messsage"
+            print("Processing SES bounce messsage")
 
             try:
                 reportingMTA = SESjson['bounce']['reportingMTA']
             except:
-                print "No reportingMTA provided in bounce notification"
+                print("No reportingMTA provided in bounce notification")
                 print("Received event: " + json.dumps(event, indent=2))
                 reportingMTA = "UNKNOWN"
 
@@ -66,14 +68,14 @@ def lambda_handler(event, context):
                 try:
                     recipientEmailAddress = recipient['emailAddress']
                 except:
-                    print "No recipient email provided in bounce notification"
+                    print("No recipient email provided in bounce notification")
                     print("Received event: " + json.dumps(event, indent=2))
                     recipientEmailAddress = "UNKNOWN"
 
                 try:
                     diagnosticCode = recipient['diagnosticCode']
                 except:
-                    print "No diagnosticCode provided in bounce notification"
+                    print("No diagnosticCode provided in bounce notification")
                     print("Received event: " + json.dumps(event, indent=2))
                     diagnosticCode = "UNKNOWN"
 
@@ -93,14 +95,14 @@ def lambda_handler(event, context):
                 Item={
                     'recipientAddress': recipientEmailAddress,
                     'sesMessageId': sesMessageId,
-                    'sesTimestamp': long(sesTimestamp_seconds),
-                    'bounceTimestamp': long(bounceTimestamp_seconds),
+                    'sesTimestamp': int(sesTimestamp_seconds),
+                    'bounceTimestamp': int(bounceTimestamp_seconds),
                     'reportingMTA': reportingMTA,
                     'diagnosticCode': diagnosticCode,
                     'bounceType': bounceType,
                     'bounceSubType': bounceSubType,
                     'sender': sender.lower(),
-                    'expiry': long(expiry_ttl)
+                    'expiry': int(expiry_ttl)
                 }
 
                 response = DDBtable.put_item(Item=Item)

@@ -5,6 +5,7 @@ import dateutil.parser
 import datetime
 import calendar
 
+
 # Helper class to convert a DynamoDB item to JSON.
 class DecimalEncoder(json.JSONEncoder):
     def default(self, o):
@@ -15,8 +16,9 @@ class DecimalEncoder(json.JSONEncoder):
                 return int(o)
         return super(DecimalEncoder, self).default(o)
 
+
 def lambda_handler(event, context):
-    #print("Received event: " + json.dumps(event, indent=2))
+    # print("Received event: " + json.dumps(event, indent=2))
 
     processed = False
     DYNAMODB_TABLE = "DEVOPS_SES_DELIVERIES"
@@ -32,7 +34,7 @@ def lambda_handler(event, context):
     print("Read SNS Message with ID " + SnsMessageId + " published at " + SnsPublishTime)
 
     now = time.strftime("%c")
-    LambdaReceiveTime = now;
+    LambdaReceiveTime = now
 
     # SES specific fields
     SESjson = json.loads(SnsMessage)
@@ -43,10 +45,10 @@ def lambda_handler(event, context):
         sesTimestamp = SESjson['mail']['timestamp']
         sender = SESjson['mail']['source']
 
-        print("Processing an SES " + sesNotificationType + " with mID " + sesMessageId )
+        print("Processing an SES " + sesNotificationType + " with mID " + sesMessageId)
 
-        if (sesNotificationType == "Delivery"):
-            print "Processing SES delivery messsage"
+        if sesNotificationType == "Delivery":
+            print("Processing SES delivery message")
 
             reportingMTA = SESjson['delivery']['reportingMTA']
             deliveryRecipients = SESjson['delivery']['recipients']
@@ -58,7 +60,7 @@ def lambda_handler(event, context):
             for recipient in deliveryRecipients:
                 recipientEmailAddress = recipient
 
-                print("Delivery recipient: " + recipientEmailAddress )
+                print("Delivery recipient: " + recipientEmailAddress)
 
                 sesTimestamp_parsed = dateutil.parser.parse(sesTimestamp)
                 sesTimestamp_seconds = sesTimestamp_parsed.strftime('%s')
@@ -75,13 +77,13 @@ def lambda_handler(event, context):
                 Item={
                     'recipientAddress': recipientEmailAddress,
                     'sesMessageId': sesMessageId,
-                    'sesTimestamp': long(sesTimestamp_seconds),
-                    'deliveryTimestamp': long(deliveryTimestamp_seconds),
-                    'processingTime': long(processingTime),
+                    'sesTimestamp': int(sesTimestamp_seconds),
+                    'deliveryTimestamp': int(deliveryTimestamp_seconds),
+                    'processingTime': int(processingTime),
                     'reportingMTA': reportingMTA,
                     'smtpResponse': smtpResponse,
                     'sender': sender.lower(),
-                    'expiry': long(expiry_ttl)
+                    'expiry': int(expiry_ttl)
                 }
 
                 response = DDBtable.put_item(Item=Item)
