@@ -2,7 +2,7 @@
   "name": "storeSESdelivery",
   "archive": "lambda.zip",
   "description": "Writes an SES delivery to dynamoDB",
-  "region": "##application.aws.lambda.region##",
+  "region": "us-east-1",
   "runtime": "python3.8",
   "memorySize": 128,
   "timeout": 180,
@@ -11,7 +11,7 @@
     {
       "type": "sns",
       "src": "",
-      "parameter": "##application.aws.lambda.event.sns.topic##",
+      "parameter": "SES_Email_Delivery_Notifications",
       "regions": ["us-east-1","us-west-2","eu-west-1"]
     }
   ]
